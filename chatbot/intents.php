@@ -10,13 +10,15 @@
         <script type="text/javascript">
             var devAccessToken = "76c59f2365aa4cae94cf259635c87dfe",
                 baseUrl = "https://api.api.ai/v1/",
-                entitiesArr = [],
-                templatesArr = [],
-                templateStr = "",
-                userAskArr = [],
-                dataArray = [];
+                entitiesArr = [];
 
-            $(document).ready(function() {
+
+            $( function() {
+                // $( "#loading" ).on("load", function() {         
+                //     alert("wahahaha");
+                // });  
+
+
                 $("#newQuestion").on("click", function(event) {
                     $.post( "ajax/intents/addIntentsForm.php", function( data ){
                         if( data.length > 0 ) {           
@@ -25,6 +27,46 @@
                     });     
                 });
             });
+
+            function initialize() {
+                const processSynonyms = function (data) {
+                    for (var dataCtr = 0; dataCtr < data.length; dataCtr++) {                            
+                        $.ajax({
+                            type: "GET",
+                            url: baseUrl + "entities/" + data[dataCtr].id,                        
+                            headers: {
+                                "Authorization": "Bearer " + devAccessToken
+                            },
+                            success: function(entityData) {
+                                entitiesArr.push(entityData);
+                            },
+                            error: function(entityData) {
+                                alert("Something when wrong. Please try again later.\n");
+                            }
+                        });
+                    }
+                }
+
+                getEntities(processSynonyms);
+            }
+
+            function getEntities(cbFunc) {
+                $.ajax({
+                    type: "GET",
+                    url: baseUrl + "entities",
+                    headers: {
+                        "Authorization": "Bearer " + devAccessToken
+                    },
+                    success: function(data) {
+                        cbFunc(data);                     
+                    },
+                    error: function() {
+                        respond(messageInternalError);
+                    }
+                });
+            }
+
+
 
             function loadIntents() {
                 $.ajax({
@@ -55,180 +97,94 @@
                         respond(messageInternalError);
                     }
                 });
-            }            
-
-            function phraseChecker(phrase, callback) {
-                // var phrase = "I need a short and long bond paper";
-                $.ajax({
-                    type: "GET",
-                    url: baseUrl + "entities",
-                    headers: {
-                        "Authorization": "Bearer " + devAccessToken
-                    },
-
-                    success: function(data) {
-                        // $("#testdiv").html(data[2].preview);
-                        // var templateStr = "";
-                        var templateStr2 = "asdas";
-                        var dataCount = data.length;
-                        for (var i = 0; i < data.length; i++) {
-                            
-                            var xhr = $.ajax({
-                                type: "GET",
-                                url: baseUrl + "entities/" + data[i].id,                        
-                                headers: {
-                                    "Authorization": "Bearer " + devAccessToken
-                                },
-                                success: function(entityData) {
-                                    var entriesCount = entityData.entries.length;
-
-                                    for(var j = 0; j < entityData.entries.length; j++) {
-                                        var synonymsCount = entityData.entries[j].synonyms.length;
-                                        for(var k = 0; k < entityData.entries[j].synonyms.length; k++) {
-                                            index = phrase.indexOf(entityData.entries[j].synonyms[k]);
-                                            var res = "";
-                                            if(index != -1) {
-                                                // $("#testdiv").append(index + " " + entityData.entries[j].synonyms[k] + "<br><br>");
-                                                var replaceString = "|@" + entityData.name + ":" + entityData.name + ":" + entityData.entries[j].synonyms[k] + "|";
-
-                                                phrase = phrase.replace(entityData.entries[j].synonyms[k], replaceString);
-                                                storetemplateStr(phrase, callback); 
-                                                templateStr2 = phrase;
-                                            }
-                                             // if( (i === (dataCount-1)) && (j === (entriesCount-1 )) && (k === (synonymsCount-1)) ){
-                                                       
-                                             //    }
-
-
-                                        }
-                                    }  
-                                     
-                                    // callback();
-                                },
-                                error: function(entityData) {
-                                    alert("Something when wrong. Please try again later.\n" + JSON.stringify(data) + "\n" + id);
-                                }
-                            });
-                            // alert(JSON.stringify(xhr));
-                        }
-                        // alert(templateStr2);
-                    },
-                    error: function() {
-                        respond(messageInternalError);
-                    }
-                });     
-                          
-            }
-
-            function storetemplateStr(phrase, callback) {
-                templateStr = phrase;
-                callback(templateStr);
-                // var strArr = templateStr.split("|");
-                // for(var j = 0; j < strArr.length; j++) {
-                //     if(strArr[j].indexOf("@") == -1) {
-                //         var dataObj = {'text': strArr[j]};                            
-                //     }
-                //     else {
-                //         var strArr2 = strArr[j].split(":");
-                //         var dataObj = {'text': strArr2[2], 'alias': strArr2[1], meta: strArr2[0]};
-                //     }
-                //     dataArray.push(dataObj);
-                // }
+            }        
 
 
 
-// $("#testdiv").append(JSON.stringify(dataArray) + " 1234<br><br>");
-                // $("#testdiv").append(templateStr + "<br><br>");
-                // alert(templateStr);
-            }
 
-            function testcurlGet(){
-                $.ajax({                        
-                        url: "ajax/intents/getIntent.php" ,                        
 
-                        success: function(data) {
-                            $("#testdiv").append(JSON.stringify(data) + " 1234<br><br>");
-                        },
-                        error: function(data) {
-                            alert("Something when wrong. Please try again later.\n" + JSON.stringify(data) + "\n" + id);                        
-                        }
-                    });   
+            function phraseChecker(phrase) {
+                for(var entityDataCtr = 0; entityDataCtr < entitiesArr.length; entityDataCtr++) {
+                    for(var entriesCtr = 0; entriesCtr < entitiesArr[entityDataCtr].entries.length; entriesCtr++) {
+                        for(var synonymsCtr = 0; synonymsCtr < entitiesArr[entityDataCtr].entries[entriesCtr].synonyms.length; synonymsCtr++) {
+                            var index = phrase.indexOf(entitiesArr[entityDataCtr].entries[entriesCtr].synonyms[synonymsCtr]);
+                            if(index != -1) {
+                                var replaceString = "|@" + entitiesArr[entityDataCtr].name + ":" + entitiesArr[entityDataCtr].name + ":" + entitiesArr[entityDataCtr].entries[entriesCtr].synonyms[synonymsCtr] + "|";
+                                phrase = phrase.replace(entitiesArr[entityDataCtr].entries[entriesCtr].synonyms[synonymsCtr], replaceString);
+                            }
+                        }    
+                    }                    
+                }                 
+                return phrase;
             }
 
             function postIntents() {
                 var intentName = $("input[name=intentName]").val(),
                     botResponse = $("input[name='response']").val(),
-                    entityArray = [],
                     userSaysArray = [],
                     reponsesArray = [],
+                    parametersArray = [],
+                    templateArray = [],
+
                     dataArray = [];
 
-                $("input[name='userSays[]']").each(function() {                    
-                        phraseChecker($(this).val(), function(data) {
-                            alert(data);
-                            // var strArr = templateStr.split("|");
-                            // for(var j = 0; j < strArr.length; j++) {
-                            //     if(strArr[j].indexOf("@") == -1) {
-                            //         var dataObj = {'text': strArr[j]};                            
-                            //     }
-                            //     else {
-                            //         var strArr2 = strArr[j].split(":");
-                            //         var dataObj = {'text': strArr2[2], 'alias': strArr2[1], meta: strArr2[0]};
-                            //     }
-                            //     dataArray.push(dataObj);
-                            // }
-                            // alert(JSON.stringify(dataArray));   
-                            // $("#testdiv").html(JSON.stringify(dataArray) + " 1234<br><br>");
-                        });  
+                $("input[name='userSays[]']").each(function() {  
+                    var template = phraseChecker($(this).val());
+                    var strArr = template.split("|");
+                    for(var templatePartCtr = 0; templatePartCtr < strArr.length; templatePartCtr++) {
+                        if(strArr[templatePartCtr].indexOf("@") == -1) {
+                            var dataObj = {'text': strArr[templatePartCtr]};                            
+                        }
+                        else {
+                            var strArr2 = strArr[templatePartCtr].split(":");
+                            var dataObj = {'text': strArr2[2], 'alias': strArr2[1], meta: strArr2[0]};
+                            var parValVar = "\$" + strArr2[1];
+                            var parameterObj = {'dataType': strArr2[0], 'name':  strArr2[1], 'value': parValVar};
+                            parametersArray.push(dataObj);
+                            strArr2.pop();
+                            strArr[templatePartCtr] = strArr2.join(":");
+                        }
+                        dataArray.push(dataObj);                        
+                    }
+                    var newTemplate = strArr.join("");
+                    templateArray.push(newTemplate);
+                });   
 
-                        // var strArr = templateStr.split("|");
-                        // for(var j = 0; j < strArr.length; j++) {
-                        //     if(strArr[j].indexOf("@") == -1) {
-                        //         var dataObj = {'text': strArr[j]};                            
-                        //     }
-                        //     else {
-                        //         var strArr2 = strArr[j].split(":");
-                        //         var dataObj = {'text': strArr2[2], 'alias': strArr2[1], meta: strArr2[0]};
-                        //     }
-                        //     dataArray.push(dataObj);
-
-                        // }
-                        // alert("asdada");
-                        // $("#testdiv").append("asd " + templateStr + "1234<br><br>");
-                        // storetemplateStr(phrase);
-                    
-                    
-
-                    // var dataObj = {'text': $(this).val()};
-                    // dataArray.push(dataObj);
+                var parametersArray = parametersArray.filter(function(elem, index, self) {
+                    return index == self.indexOf(elem);
+                });
+                var templateArray = templateArray.filter(function(elem, index, self) {
+                    return index == self.indexOf(elem);
+                });
+                var dataArray = dataArray.filter(function(elem, index, self) {
+                    return index == self.indexOf(elem);
                 });
 
 
-                
-                
+                var userAskObj = {'data': dataArray, 'isTemplate': false, 'count': 0};
+                userSaysArray.push(userAskObj);
 
-                // var userAskObj = {'data': dataArray, 'isTemplate': false, 'count': 0};
-                // userSaysArray.push(userAskObj);
-                // var responsesObj = {'resetContext': false, 'action': intentName, 'affectedContext': [], 'parameters':[], 'speech': botResponse};
-                // reponsesArray.push(responsesObj);      
+                var responsesObj = {'resetContext': false, 'action': intentName, 'affectedContext': [], 'parameters':parametersArray, 'speech': botResponse};
+                reponsesArray.push(responsesObj);
 
-                // $.ajax({
-                //     type: "POST",
-                //     url: baseUrl + "intents",
-                //     contentType: "application/json; charset=utf-8",
-                //     dataType: "json",
-                //     headers: {
-                //         "Authorization": "Bearer " + devAccessToken
-                //     },
-                //     data: JSON.stringify({name: intentName, auto: true, context: [], templates: [], userSays: userSaysArray, responses: reponsesArray, priority: 500000}),
-                //     success: function(data) {
-                //         alert("Adding intents successful");
-                //         location.reload();
-                //     },
-                //     error: function(data) {
-                //         alert("Adding intents failed. Please try again.");
-                //     }
-                // });                
+                $.ajax({
+                    type: "POST",
+                    url: baseUrl + "intents",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    headers: {
+                        "Authorization": "Bearer " + devAccessToken
+                    },
+                    data: JSON.stringify({name: intentName, auto: true, context: [], templates: [], userSays: userSaysArray, responses: reponsesArray, priority: 500000}),
+                    success: function(data) {
+                        alert("Adding intents successful");
+                    },
+                    error: function() {
+                        alert("Adding intents failed. Please try again.");
+
+                    }
+                });
+
             }
 
             function getIntent() {
@@ -252,10 +208,7 @@
             }
 
             function getSpecifiedIntent(e) {
-
-                $("#testdiv").append("asdasdasdasd" + templateStr + "1231<br><br>");
                 $(e).closest('tr').find("input").each(function() {
-                    // alert(this.value);
                     var id = this.value;
                     $.ajax({
                         type: "GET",
@@ -264,7 +217,6 @@
                             "Authorization": "Bearer " + devAccessToken
                         },
                         success: function(data) {
-                            // $("#testdiv").html(JSON.stringify(data));
 
                             $("#editDiv").html(
                                 '<table class="table table-hover" id="editDivTable" style="width: 50%; margin: 0 auto;" >' +
@@ -287,15 +239,16 @@
                             var entTable = $("#editDivTable");
                             var res = "";
                             var dataID = data.id;
+                            var usertext = "";
                             for (var h = 0; h < data.userSays.length; h++) {
                                 for (var i = 0; i < data.userSays[h].data.length; i++) {
-                                    var actionString =  "<input type='hidden' value='" + data.userSays[h].data[i].value + "' readonly />" +
-                                                        "<button type='button' class='btn btn-info btn-xs' title='Delete Keyword' onclick='deleteEntityData(this, \"" + data.id + "\")' ><span class='glyphicon glyphicon-remove'></span></button>";
-                                    var row = $('<tr></tr>').appendTo(entTable);    
-                                    $('<td class="entityName"></td>').text(data.userSays[h].data[i].text).appendTo(row); 
-                                    
-                                    $('<td></td>').html("").appendTo(row);
+                                    usertext += data.userSays[h].data[i].text
                                 }
+                                // var actionString =  "<input type='hidden' value='" + data.userSays[h].data[i].value + "' readonly />" +
+                                //                     "<button type='button' class='btn btn-info btn-xs' title='Delete Keyword' onclick='deleteEntityData(this, \"" + data.id + "\")' ><span class='glyphicon glyphicon-remove'></span></button>";
+                                var row = $('<tr></tr>').appendTo(entTable);    
+                                $('<td class="entityName"></td>').text(usertext).appendTo(row);
+                                $('<td></td>').html("").appendTo(row);
                             }
                             entTable.appendTo("#editDiv");
                             var entTable = $("#editDivTable2");
@@ -339,7 +292,7 @@
                     });                    
                 });               
             }
-            
+           
         </script>
     </head>
     <body>
@@ -421,8 +374,5 @@
 </html>
 <script type="text/javascript">
     loadIntents();
-   //  var ret = phraseChecker();
-   // alert(ret);
-
-testcurlGet();
+    initialize();
 </script>
