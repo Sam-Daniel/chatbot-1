@@ -1,5 +1,5 @@
 <script type="text/javascript">
-    var devAccessToken = "76c59f2365aa4cae94cf259635c87dfe",
+    var devAccessToken = "e14e1c6b19b74fac95c1bdf52689f6b7",
         baseUrl = "https://api.api.ai/v1/";
 
     $(document).ready(function() {                
