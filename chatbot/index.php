@@ -18,7 +18,7 @@ header('Access-Control-Allow-Methods: GET, PUT, POST, DELETE, OPTIONS');
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
         <script type="text/javascript">
-            var accessToken = "3c7e280edc174111bc93c7ccf45f1ae7",
+            var accessToken = "4057db070fa34ec99bdb46f96f13d36d",
                 baseUrl = "https://api.api.ai/v1/",
                 $speechInput,
                 $recBtn,
