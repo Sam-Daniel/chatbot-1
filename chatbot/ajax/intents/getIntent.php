@@ -3,7 +3,7 @@
 	if (!function_exists('curl_init')){
         die('Sorry cURL is not installed!');
     }
-	$devAccessToken = "76c59f2365aa4cae94cf259635c87dfe";
+	$devAccessToken = "e14e1c6b19b74fac95c1bdf52689f6b7";
     $baseUrl = "https://api.api.ai/v1/entities/";
     $myArray = array();
     $dateToday = date("Ymd");
